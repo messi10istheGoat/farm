@@ -78,16 +78,6 @@ export function DeviceInspectorDrawer({
   const [ytChannelInput, setYtChannelInput] = useState(device.ytChannelName);
   const [ytHandleInput, setYtHandleInput] = useState(device.ytHandle);
 
-  // Keep inputs synced when user selects a different device
-  React.useEffect(() => {
-    setGmailInput(device.gmailAddress);
-    setFbNameInput(device.fbName);
-    setYtChannelInput(device.ytChannelName);
-    setYtHandleInput(device.ytHandle);
-    setSelectedCountry(device.proxyCountryCode);
-    setEditMode(false);
-  }, [device]);
-
   const copyToClipboard = (value: string, label: string) => {
     navigator.clipboard?.writeText(value);
     setCopiedField(label);

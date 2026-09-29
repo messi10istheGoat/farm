@@ -1,0 +1,542 @@
+{
+  "id": "624ea252-f04c-43c8-86c1-2ba62a82eec4",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.android_devices": {
+      "name": "android_devices",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "node_code": {
+          "name": "node_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "device_name": {
+          "name": "device_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "manufacturer": {
+          "name": "manufacturer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model_code": {
+          "name": "model_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "android_version": {
+          "name": "android_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "soc_chipset": {
+          "name": "soc_chipset",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ram_gb": {
+          "name": "ram_gb",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 12
+        },
+        "resolution": {
+          "name": "resolution",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'1440x3120 @ 480dpi'"
+        },
+        "imei": {
+          "name": "imei",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "android_id": {
+          "name": "android_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mac_address": {
+          "name": "mac_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "build_fingerprint": {
+          "name": "build_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ONLINE'"
+        },
+        "active_app": {
+          "name": "active_app",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'HOME'"
+        },
+        "cpu_usage": {
+          "name": "cpu_usage",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 24
+        },
+        "ram_usage_mb": {
+          "name": "ram_usage_mb",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3200
+        },
+        "battery_level": {
+          "name": "battery_level",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 88
+        },
+        "fps": {
+          "name": "fps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 60
+        },
+        "cluster_shard": {
+          "name": "cluster_shard",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'SHARD-01'"
+        },
+        "proxy_protocol": {
+          "name": "proxy_protocol",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'SOCKS5'"
+        },
+        "proxy_ip": {
+          "name": "proxy_ip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proxy_port": {
+          "name": "proxy_port",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1080
+        },
+        "proxy_username": {
+          "name": "proxy_username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proxy_password": {
+          "name": "proxy_password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proxy_country": {
+          "name": "proxy_country",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proxy_country_code": {
+          "name": "proxy_country_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proxy_city": {
+          "name": "proxy_city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proxy_isp": {
+          "name": "proxy_isp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proxy_asn": {
+          "name": "proxy_asn",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proxy_latency_ms": {
+          "name": "proxy_latency_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 28
+        },
+        "webrtc_shield": {
+          "name": "webrtc_shield",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "dns_leak_protection": {
+          "name": "dns_leak_protection",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "gmail_address": {
+          "name": "gmail_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "gmail_password": {
+          "name": "gmail_password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "gmail_recovery": {
+          "name": "gmail_recovery",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "gmail_status": {
+          "name": "gmail_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'VERIFIED_2FA'"
+        },
+        "gmail_unread_count": {
+          "name": "gmail_unread_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3
+        },
+        "fb_name": {
+          "name": "fb_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fb_email": {
+          "name": "fb_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fb_uid": {
+          "name": "fb_uid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fb_password": {
+          "name": "fb_password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fb_2fa_secret": {
+          "name": "fb_2fa_secret",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fb_status": {
+          "name": "fb_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ADS_READY'"
+        },
+        "fb_friends_count": {
+          "name": "fb_friends_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 640
+        },
+        "yt_channel_name": {
+          "name": "yt_channel_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "yt_handle": {
+          "name": "yt_handle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "yt_subscribers": {
+          "name": "yt_subscribers",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1250
+        },
+        "yt_watch_hours": {
+          "name": "yt_watch_hours",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 340
+        },
+        "yt_status": {
+          "name": "yt_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'VERIFIED_CHANNEL'"
+        },
+        "cookie_token_digest": {
+          "name": "cookie_token_digest",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_synced_at": {
+          "name": "last_synced_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_node_code": {
+          "name": "idx_node_code",
+          "columns": [
+            {
+              "expression": "node_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_cluster_shard": {
+          "name": "idx_cluster_shard",
+          "columns": [
+            {
+              "expression": "cluster_shard",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_status": {
+          "name": "idx_status",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_proxy_country": {
+          "name": "idx_proxy_country",
+          "columns": [
+            {
+              "expression": "proxy_country_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_manufacturer": {
+          "name": "idx_manufacturer",
+          "columns": [
+            {
+              "expression": "manufacturer",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "android_devices_node_code_unique": {
+          "name": "android_devices_node_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "node_code"
+          ]
+        },
+        "android_devices_imei_unique": {
+          "name": "android_devices_imei_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "imei"
+          ]
+        },
+        "android_devices_android_id_unique": {
+          "name": "android_devices_android_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "android_id"
+          ]
+        },
+        "android_devices_proxy_ip_unique": {
+          "name": "android_devices_proxy_ip_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "proxy_ip"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.automation_tasks": {
+      "name": "automation_tasks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "task_name": {
+          "name": "task_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_scope": {
+          "name": "target_scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "app_target": {
+          "name": "app_target",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "devices_affected": {
+          "name": "devices_affected",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'COMPLETED'"
+        },
+        "command_script": {
+          "name": "command_script",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

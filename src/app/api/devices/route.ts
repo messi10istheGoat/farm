@@ -83,6 +83,8 @@ export async function GET(request: NextRequest) {
       devices,
       [{ filteredCount }],
       [{ totalFleetCount }],
+      [{ uniqueProxiesCount }],
+      [{ avgLatency }],
       shardGroups,
       countryGroups,
       statusGroups,
@@ -100,6 +102,16 @@ export async function GET(request: NextRequest) {
         .from(androidDevices)
         .where(whereClause),
       db.select({ totalFleetCount: count() }).from(androidDevices),
+      db
+        .select({
+          uniqueProxiesCount: sql<number>`count(distinct ${androidDevices.proxyIp})`,
+        })
+        .from(androidDevices),
+      db
+        .select({
+          avgLatency: sql<number>`coalesce(round(avg(${androidDevices.proxyLatencyMs})), 28)`,
+        })
+        .from(androidDevices),
       db
         .select({
           shard: androidDevices.clusterShard,
@@ -131,7 +143,21 @@ export async function GET(request: NextRequest) {
         .limit(10),
     ]);
 
-    const onlineCount = statusGroups
+    const typedStatusGroups = statusGroups as Array<{
+      status: string;
+      count: unknown;
+    }>;
+    const typedShardGroups = shardGroups as Array<{
+      shard: string;
+      count: unknown;
+    }>;
+    const typedCountryGroups = countryGroups as Array<{
+      countryCode: string;
+      country: string;
+      count: unknown;
+    }>;
+
+    const onlineCount = typedStatusGroups
       .filter((g) => g.status !== "OFFLINE")
       .reduce((acc, g) => acc + Number(g.count), 0);
 
@@ -146,14 +172,14 @@ export async function GET(request: NextRequest) {
       telemetry: {
         totalDevices: Number(totalFleetCount),
         onlineDevices: onlineCount,
-        uniqueProxiesCount: Number(totalFleetCount),
+        uniqueProxiesCount: Number(uniqueProxiesCount) || Number(totalFleetCount),
         totalAccountsCount: Number(totalFleetCount) * 3,
-        avgLatencyMs: 34,
-        shards: shardGroups.map((s) => ({
+        avgLatencyMs: Number(avgLatency) || 28,
+        shards: typedShardGroups.map((s) => ({
           shard: s.shard,
           count: Number(s.count),
         })),
-        countries: countryGroups.map((c) => ({
+        countries: typedCountryGroups.map((c) => ({
           countryCode: c.countryCode,
           country: c.country,
           count: Number(c.count),
@@ -236,7 +262,9 @@ export async function POST(request: NextRequest) {
 
     const octetC = (Math.floor((nextSeq - 1) / 250) + 10) % 254;
     const octetD = ((nextSeq - 1) % 250) + 2;
-    const autoProxyIp = `${selectedLoc.subnetA}.${selectedLoc.subnetB}.${octetC}.${octetD}`;
+    const uniqueFirstOctet =
+      ((selectedLoc.subnetA + Math.floor((nextSeq - 1) / 5000)) % 220) + 11;
+    const autoProxyIp = `${uniqueFirstOctet}.${selectedLoc.subnetB}.${octetC}.${octetD}`;
 
     const newDeviceValues = {
       ...baseRecord,
@@ -272,7 +300,7 @@ export async function POST(request: NextRequest) {
       gmailStatus: "VERIFIED_2FA",
 
       fbName: body.fbName || baseRecord.fbName,
-      fbEmail: body.gmailAddress || baseRecord.gmailAddress,
+      fbEmail: body.fbEmail || body.gmailAddress || baseRecord.gmailAddress,
       fbUid: body.fbUid || baseRecord.fbUid,
       fbStatus: "ADS_READY",
 

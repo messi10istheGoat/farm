@@ -86,10 +86,12 @@ export default function DroidMatrixCommandPage() {
     setTimeout(() => setStatusBanner(null), 3500);
   };
 
-  const fetchFleet = useCallback(
-    async (keepSelectionId?: number) => {
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    let ignore = false;
+    async function loadData() {
       try {
-        setIsLoading(true);
         const params = new URLSearchParams({
           shard: selectedShard,
           country: selectedCountry,
@@ -103,6 +105,7 @@ export default function DroidMatrixCommandPage() {
         const res = await fetch(`/api/devices?${params.toString()}`);
         if (!res.ok) throw new Error("Failed to fetch fleet");
         const data = await res.json();
+        if (ignore) return;
 
         setDevices(data.devices || []);
         setPagination(data.pagination);
@@ -111,35 +114,35 @@ export default function DroidMatrixCommandPage() {
 
         if (data.devices && data.devices.length > 0) {
           setSelectedDevice((prev) => {
-            const targetId = keepSelectionId ?? prev?.id;
-            if (targetId) {
+            if (prev) {
               const found = data.devices.find(
-                (d: AndroidDevice) => d.id === targetId
+                (d: AndroidDevice) => d.id === prev.id
               );
               if (found) return found;
             }
-            return prev ?? data.devices[0];
+            return data.devices[0];
           });
         }
       } catch (err) {
         console.error("Error loading Android fleet:", err);
       } finally {
-        setIsLoading(false);
+        if (!ignore) setIsLoading(false);
       }
-    },
-    [
-      selectedShard,
-      selectedCountry,
-      selectedManufacturer,
-      selectedAppFilter,
-      searchQuery,
-      page,
-    ]
-  );
+    }
 
-  useEffect(() => {
-    fetchFleet();
-  }, [fetchFleet]);
+    loadData();
+    return () => {
+      ignore = true;
+    };
+  }, [
+    selectedShard,
+    selectedCountry,
+    selectedManufacturer,
+    selectedAppFilter,
+    searchQuery,
+    page,
+    refreshKey,
+  ]);
 
   // Action 1: Switch active app on 1 or multiple synced devices
   const handleSwitchApp = async (app: string, targetIds?: number[]) => {
@@ -158,6 +161,10 @@ export default function DroidMatrixCommandPage() {
           payload: { app },
         }),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Switch app failed (${res.status})`);
+      }
       const data = await res.json();
       if (data.devices && data.devices.length > 0) {
         const updatedMap = new Map<number, AndroidDevice>(
@@ -170,6 +177,10 @@ export default function DroidMatrixCommandPage() {
           setSelectedDevice(updatedMap.get(selectedDevice.id)!);
         }
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "App switch failed";
+      showBanner(`Action Failed: ${msg}`);
+      console.error("handleSwitchApp error:", err);
     } finally {
       setIsBusy(false);
     }
@@ -188,6 +199,10 @@ export default function DroidMatrixCommandPage() {
           payload: { countryCode },
         }),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Proxy rotation failed (${res.status})`);
+      }
       const data = await res.json();
       if (data.device) {
         setDevices((prev) =>
@@ -200,6 +215,10 @@ export default function DroidMatrixCommandPage() {
           `Rotated Dedicated Proxy on ${data.device.nodeCode} → ${data.device.proxyIp}:${data.device.proxyPort} (${data.device.proxyCountry})`
         );
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Proxy rotation failed";
+      showBanner(`Action Failed: ${msg}`);
+      console.error("handleRotateProxy error:", err);
     } finally {
       setIsBusy(false);
     }
@@ -221,6 +240,10 @@ export default function DroidMatrixCommandPage() {
           payload: { deviceName },
         }),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Fingerprint spoof failed (${res.status})`);
+      }
       const data = await res.json();
       if (data.device) {
         setDevices((prev) =>
@@ -233,6 +256,10 @@ export default function DroidMatrixCommandPage() {
           `Spoofed IMEI (${data.device.imei}) & Android ID (${data.device.androidId}) on ${data.device.nodeCode}`
         );
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Fingerprint spoof failed";
+      showBanner(`Action Failed: ${msg}`);
+      console.error("handleSpoofFingerprint error:", err);
     } finally {
       setIsBusy(false);
     }
@@ -254,6 +281,10 @@ export default function DroidMatrixCommandPage() {
           payload,
         }),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Account update failed (${res.status})`);
+      }
       const data = await res.json();
       if (data.device) {
         setDevices((prev) =>
@@ -262,7 +293,12 @@ export default function DroidMatrixCommandPage() {
         if (selectedDevice?.id === data.device.id) {
           setSelectedDevice(data.device);
         }
+        showBanner(`Account credentials updated on ${data.device.nodeCode}`);
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Account update failed";
+      showBanner(`Action Failed: ${msg}`);
+      console.error("handleUpdateAccounts error:", err);
     } finally {
       setIsBusy(false);
     }
@@ -283,11 +319,19 @@ export default function DroidMatrixCommandPage() {
           },
         }),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Batch command failed (${res.status})`);
+      }
       const data = await res.json();
       if (data.success) {
-        await fetchFleet(selectedDevice?.id);
+        setRefreshKey((k) => k + 1);
         showBanner(`Executed Fleet Batch Command: ${data.task?.taskName}`);
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Fleet batch command failed";
+      showBanner(`Action Failed: ${msg}`);
+      console.error("handleFleetBatchCommand error:", err);
     } finally {
       setIsBusy(false);
     }
@@ -305,14 +349,22 @@ export default function DroidMatrixCommandPage() {
           ...payload,
         }),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Provisioning failed (${res.status})`);
+      }
       const data = await res.json();
       if (data.device) {
         setSelectedDevice(data.device);
-        await fetchFleet(data.device.id);
+        setRefreshKey((k) => k + 1);
         showBanner(
           `Booted new Android node ${data.device.nodeCode} (${data.device.deviceName}) on proxy ${data.device.proxyIp}`
         );
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Node provisioning failed";
+      showBanner(`Action Failed: ${msg}`);
+      console.error("handleProvisionSingle error:", err);
     } finally {
       setIsBusy(false);
     }
@@ -330,13 +382,21 @@ export default function DroidMatrixCommandPage() {
           count: countToSpawn,
         }),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Bulk provisioning failed (${res.status})`);
+      }
       const data = await res.json();
       if (data.success) {
-        await fetchFleet(selectedDevice?.id);
+        setRefreshKey((k) => k + 1);
         showBanner(
           `Spawned +${data.provisionedCount} distinct Android mobile phones! Fleet now at ${data.newTotal.toLocaleString()} nodes.`
         );
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Bulk provisioning failed";
+      showBanner(`Action Failed: ${msg}`);
+      console.error("handleProvisionBulk error:", err);
     } finally {
       setIsBusy(false);
     }
@@ -747,8 +807,9 @@ export default function DroidMatrixCommandPage() {
 
         {/* ==================== PANE 2 (CENTER 4 COLS): LIVE INTERACTIVE ANDROID EMULATOR STAGE ==================== */}
         <section className="lg:col-span-4 h-full overflow-hidden">
-          {selectedDevice && (
+          {selectedDevice ? (
             <AndroidPhoneStage
+              key={selectedDevice.id}
               device={selectedDevice}
               syncDevices={syncWallDevices}
               onSwitchApp={handleSwitchApp}
@@ -758,13 +819,26 @@ export default function DroidMatrixCommandPage() {
               onSelectDevice={(d) => setSelectedDevice(d)}
               isBusy={isBusy}
             />
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-[#090C10] border-r border-[#242E42]">
+              <div className="w-16 h-16 rounded-2xl bg-[#11161F] border border-[#242E42] flex items-center justify-center mb-4 text-[#8B949E]">
+                <Smartphone className="w-8 h-8 opacity-40" />
+              </div>
+              <h3 className="text-sm font-semibold text-[#F0F6FC]">
+                No Android Node Selected
+              </h3>
+              <p className="text-xs text-[#8B949E] max-w-xs mt-1">
+                Select a device from the fleet matrix on the left to inspect its live display, dedicated proxy tunnel, and account matrix.
+              </p>
+            </div>
           )}
         </section>
 
         {/* ==================== PANE 3 (RIGHT 3 COLS): DEEP-DIVE NODE INSPECTOR DRAWER ==================== */}
         <section className="lg:col-span-3 h-full overflow-hidden">
-          {selectedDevice && (
+          {selectedDevice ? (
             <DeviceInspectorDrawer
+              key={selectedDevice.id}
               device={selectedDevice}
               recentTasks={recentTasks}
               onRotateProxy={handleRotateProxy}
@@ -773,6 +847,18 @@ export default function DroidMatrixCommandPage() {
               onSwitchApp={(app) => handleSwitchApp(app)}
               isBusy={isBusy}
             />
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-[#11161F]">
+              <div className="w-16 h-16 rounded-2xl bg-[#090C10] border border-[#242E42] flex items-center justify-center mb-4 text-[#8B949E]">
+                <ShieldCheck className="w-8 h-8 opacity-40" />
+              </div>
+              <h3 className="text-sm font-semibold text-[#F0F6FC]">
+                Inspector Inactive
+              </h3>
+              <p className="text-xs text-[#8B949E] max-w-xs mt-1">
+                Select an active mobile node to view dedicated credentials, hardware identity, and live ADB execution logs.
+              </p>
+            </div>
           )}
         </section>
       </div>
