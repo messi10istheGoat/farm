@@ -8,7 +8,7 @@ import {
   generateAndroidId,
   generateMacAddress,
 } from "@/lib/device-generator";
-import { eq, inArray, sql } from "drizzle-orm";
+import { count, eq, inArray, or, sql } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,6 +42,20 @@ export async function POST(request: NextRequest) {
         .where(inArray(androidDevices.id, ids))
         .returning();
 
+      const scopeName =
+        ids.length === 1
+          ? updated[0]?.nodeCode || `NODE #${ids[0]}`
+          : `${ids.length} SYNC NODES`;
+
+      await db.insert(automationTasks).values({
+        taskName: `Foreground App Switched to [${targetApp}]`,
+        targetScope: scopeName,
+        appTarget: targetApp,
+        devicesAffected: ids.length,
+        status: "COMPLETED",
+        commandScript: `am start -n com.droidmatrix.${targetApp.toLowerCase()}/.MainActivity`,
+      });
+
       return NextResponse.json({
         success: true,
         devices: updated,
@@ -70,10 +84,31 @@ export async function POST(request: NextRequest) {
           ? locCandidates[Math.floor(Math.random() * locCandidates.length)]
           : PROXY_LOCATIONS[Math.floor(Math.random() * PROXY_LOCATIONS.length)];
 
-      const randOctetA = ((loc.subnetA + Math.floor(Math.random() * 40)) % 220) + 12;
-      const randOctetC = Math.floor(Math.random() * 240) + 10;
-      const randOctetD = Math.floor(Math.random() * 240) + 5;
-      const newProxyIp = `${randOctetA}.${loc.subnetB}.${randOctetC}.${randOctetD}`;
+      // Generate a collision-free unique proxy IP
+      let newProxyIp = "";
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const randOctetA =
+          ((loc.subnetA + Math.floor(Math.random() * 40)) % 220) + 12;
+        const randOctetC = Math.floor(Math.random() * 240) + 10;
+        const randOctetD = Math.floor(Math.random() * 240) + 5;
+        const candidateIp = `${randOctetA}.${loc.subnetB}.${randOctetC}.${randOctetD}`;
+
+        const [ipConflict] = await db
+          .select({ id: androidDevices.id })
+          .from(androidDevices)
+          .where(eq(androidDevices.proxyIp, candidateIp));
+
+        if (!ipConflict || ipConflict.id === id) {
+          newProxyIp = candidateIp;
+          break;
+        }
+      }
+
+      if (!newProxyIp) {
+        const fallbackOctetD = (id % 240) + 10;
+        newProxyIp = `${loc.subnetA + 3}.${loc.subnetB}.${(id % 200) + 20}.${fallbackOctetD}`;
+      }
+
       const newPort = 10000 + Math.floor(Math.random() * 45000);
       const newLatency = loc.baseLatency + Math.floor(Math.random() * 22);
 
@@ -127,10 +162,37 @@ export async function POST(request: NextRequest) {
           HARDWARE_CATALOG[0]
         : HARDWARE_CATALOG[Math.floor(Math.random() * HARDWARE_CATALOG.length)];
 
-      const entropySeed = id * 1000 + Math.floor(Math.random() * 89999);
-      const newImei = generateImei(hw.tacPrefix, entropySeed);
-      const newAndroidId = generateAndroidId(entropySeed);
-      const newMac = generateMacAddress(entropySeed);
+      let newImei = "";
+      let newAndroidId = "";
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const entropySeed =
+          id * 10000 + Math.floor(Math.random() * 899999) + 100000;
+        const candidateImei = generateImei(hw.tacPrefix, entropySeed);
+        const candidateAndroidId = generateAndroidId(entropySeed);
+
+        const [conflict] = await db
+          .select({ id: androidDevices.id })
+          .from(androidDevices)
+          .where(
+            or(
+              eq(androidDevices.imei, candidateImei),
+              eq(androidDevices.androidId, candidateAndroidId)
+            )
+          );
+
+        if (!conflict || conflict.id === id) {
+          newImei = candidateImei;
+          newAndroidId = candidateAndroidId;
+          break;
+        }
+      }
+
+      if (!newImei) {
+        newImei = generateImei(hw.tacPrefix, id * 7919 + 54321);
+        newAndroidId = generateAndroidId(id * 7919 + 54321);
+      }
+
+      const newMac = generateMacAddress(id * 17 + Math.floor(Math.random() * 500));
 
       const [updated] = await db
         .update(androidDevices)
@@ -192,6 +254,8 @@ export async function POST(request: NextRequest) {
           fbName: payload?.fbName ?? existing.fbName,
           fbEmail: payload?.fbEmail ?? existing.fbEmail,
           fbUid: payload?.fbUid ?? existing.fbUid,
+          fbPassword: payload?.fbPassword ?? existing.fbPassword,
+          fb2faSecret: payload?.fb2faSecret ?? existing.fb2faSecret,
           fbStatus: payload?.fbStatus ?? existing.fbStatus,
           fbFriendsCount:
             payload?.fbFriendsCount !== undefined
@@ -213,13 +277,15 @@ export async function POST(request: NextRequest) {
         .where(eq(androidDevices.id, id))
         .returning();
 
+      const safeEmail = updated.gmailAddress.replace(/['"\\]/g, "");
+
       await db.insert(automationTasks).values({
         taskName: `Synced Account Vault (Gmail/FB/YT) on ${updated.nodeCode}`,
         targetScope: updated.nodeCode,
         appTarget: payload?.appTarget || "GMAIL",
         devicesAffected: 1,
         status: "COMPLETED",
-        commandScript: `sqlite3 /data/system_ce/0/accounts_ce.db "UPDATE accounts SET name='${updated.gmailAddress}';"`,
+        commandScript: `sqlite3 /data/system_ce/0/accounts_ce.db "UPDATE accounts SET name='${safeEmail}';"`,
       });
 
       return NextResponse.json({
@@ -237,6 +303,13 @@ export async function POST(request: NextRequest) {
         shardScope !== "ALL"
           ? eq(androidDevices.clusterShard, shardScope)
           : undefined;
+
+      const [{ count: matchingCount }] = await db
+        .select({ count: count() })
+        .from(androidDevices)
+        .where(whereCond);
+
+      const affected = Number(matchingCount) || 1;
 
       let targetApp = "YOUTUBE";
       let taskTitle = "Fleet YouTube Auto-Watch & Subscription Warmup";
@@ -289,9 +362,10 @@ export async function POST(request: NextRequest) {
         .insert(automationTasks)
         .values({
           taskName: taskTitle,
-          targetScope: shardScope === "ALL" ? "ALL_SHARDS [ENTIRE FLEET]" : shardScope,
+          targetScope:
+            shardScope === "ALL" ? "ALL_SHARDS [ENTIRE FLEET]" : shardScope,
           appTarget: targetApp,
-          devicesAffected: shardScope === "ALL" ? 1200 : 300,
+          devicesAffected: affected,
           status: "COMPLETED",
           commandScript: script,
         })
